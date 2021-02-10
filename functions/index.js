@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const FieldValue = require('firebase-admin').firestore.FieldValue;
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -19,6 +20,17 @@ exports.onUserDelete = functions.firestore
     const userIdParam = context.params.userId;
     const deletedValue = snapshot.data();
     const userEmail = deletedValue.email;
+    // get all the groups is member
+    const userGroups = deletedValue.groups
+
+    // loop through the user groups and remove user id from that group members list;
+    userGroups.forEach(group=> {
+      console.log(group.id);
+      // remove user id group group members
+      db.collection('groups').doc(group.id).update({
+        "members":FieldValue.arrayRemove(userIdParam)
+      })
+    })
 
     const contactsRef = admin.firestore().collection('contacts').doc(userIdParam).collection('userContacts');
     const messagesRef = db.collection('messages').doc(userIdParam).collection('userMessages');
@@ -52,14 +64,7 @@ exports.onUserDelete = functions.firestore
       if(doc.exists){
         doc.ref.delete();
       }
-    })
-
-    
-
-   
-     
-
-     
+    });     
 
       
   });
